@@ -6,7 +6,7 @@ echo Mengirim permintaan bantuan ke laboran dari Lab M...
 echo.
 
 :: Tambahkan header user-token dan lab identifier saat mengirim request
-curl -s -X GET -H "user-token: 1105365521" -H "lab-identifier: M" http://localhost:3000/request-help > nul
+curl -s -X GET -H "user-token: 1105365521" -H "lab-identifier: M" https://labkom.blimbing.biz.id/request-help > nul
 if %errorlevel% neq 0 (
     echo Gagal mengirim permintaan bantuan. Pastikan server Node.js sedang berjalan.
     pause
@@ -26,7 +26,7 @@ timeout /t 1 >nul
 
 :: Mengambil respons langsung dari curl tanpa menyimpan ke file
 set "response="
-for /f "delims=" %%i in ('curl -s -X GET -H "user-token: 1105365521" http://localhost:3000/response') do (
+for /f "delims=" %%i in ('curl -s -X GET -H "user-token: 1105365521" https://labkom.blimbing.biz.id/response') do (
     if not defined response (
         set "response=%%i"
     ) else (

@@ -173,7 +173,7 @@ bot.on('message', (msg) => {
     if (!text.startsWith('/') && pendingResponses.get(chatId)) {
         pendingResponses.delete(chatId); // Hapus status pending
 
-        fetch('http://localhost:3000/response', {
+        fetch('https://labkom.blimbing.biz.id/response', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chatId, response: text })
