@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 const app = express();
 dotenv.config();
@@ -13,10 +14,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.set("view engine", "ejs");
-const __filename = path.resolve();
+const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.set("views", path.join(__dirname, "/views"));
+app.set('views', path.join(__dirname, 'views'));
 
 app.get("/", (req, res) => {
     res.render("main");
