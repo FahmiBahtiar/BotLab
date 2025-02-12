@@ -4,6 +4,8 @@ import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import bodyParser from 'body-parser';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { redisHelpers } from './config/redis.js';
 
 const app = express();
@@ -12,12 +14,32 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
+app.set("view engine", "ejs");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.set('views', path.join(__dirname, 'views'));
+
+app.get("/", (req, res) => {
+    res.render("main");
+});
+
 const token = process.env.TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
-// Daftar whitelist chatId yang diizinkan
-const whitelist = ['1105365521'];
+const commands = [
+    { command: 'response', description: 'Respon permintaan bantuan' }
+];
 
+bot.setMyCommands(commands)
+    .then(() => {
+        console.log('[LOG] Perintah bot berhasil didaftarkan.');
+    })
+    .catch(err => {
+        console.error('[LOG] Gagal mendaftarkan perintah bot:', err);
+    });
+
+const whitelist = ['1105365521'];
 let laboran = [
     { chatId: '1105365521', name: 'Fahmi' }
 ];
@@ -83,7 +105,24 @@ app.post('/response', express.json(), async (req, res) => {
     res.send('Respons diterima!');
 });
 
-// Modified response command handler
+app.get('/response', async (req, res) => {
+    const latestResponse = await redisHelpers.getLatestResponse();
+    if (latestResponse) {
+        const lab = laboran.find(l => l.chatId === latestResponse.chatId);
+        const nama = lab ? lab.name : 'Unknown';
+        const pesan = latestResponse.response || 'Tidak ada pesan';
+        
+        const formattedResponse = `Laboran (${nama}) Merespon Pesan Bapak/Ibu: ${pesan}`;
+        console.log(`[LOG] Menampilkan respons terakhir: ${formattedResponse}`);
+        res.send(formattedResponse);
+        await redisHelpers.setLatestResponse(null);
+    } else {
+        console.log(`[LOG] Tidak ada respons terakhir.`);
+        res.status(204).send();
+    }
+});
+
+// Modified handler untuk command /response
 bot.onText(/\/response/, async (msg) => {
     const chatId = msg.chat.id.toString();
 
