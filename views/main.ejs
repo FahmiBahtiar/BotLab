@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Lab Komputer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a1a, #2c3e50);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: white;
+        }
+
+        .navbar {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 1rem 2rem;
+            position: fixed;
+            width: 100%;
+            z-index: 100;
+            text-align: center;
+        }
+
+        .navbar h1 {
+            font-size: 1.5rem;
+            color: #3498db;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(52, 152, 219, 0.1) 0%,
+                rgba(52, 152, 219, 0.1) 10%,
+                transparent 10%,
+                transparent 20%
+            );
+            animation: backgroundMove 20s linear infinite;
+        }
+
+        @keyframes backgroundMove {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        .hero-content {
+            z-index: 1;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(52, 152, 219, 0.3);
+            max-width: 800px;
+        }
+
+        .hero h2 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            color: #3498db;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .datetime {
+            color: #ecf0f1;
+            font-size: 1.5rem;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: rgba(52, 152, 219, 0.2);
+            border: 2px solid #3498db;
+            border-radius: 10px;
+        }
+
+        .warning-box {
+            background: rgba(231, 76, 60, 0.2);
+            border: 2px solid #e74c3c;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 2rem;
+        }
+
+        .warning-box h3 {
+            color: #e74c3c;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .warning-box p {
+            color: #ecf0f1;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h2 {
+                font-size: 2.5rem;
+            }
+            
+            .hero-content {
+                padding: 2rem;
+            }
+
+            .datetime {
+                font-size: 1.2rem;
+                padding: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>Bot Lab Komputer</h1>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h2>Bot Lab Komputer</h2>
+            
+            <div class="datetime" id="datetime">
+                <!-- JavaScript akan mengisi bagian ini -->
+            </div>
+            
+            <div class="warning-box">
+                <h3>⚠️ PERINGATAN</h3>
+                <p>Akses ke sistem ini dibatasi hanya untuk pengguna yang berwenang. 
+                   Penggunaan tidak sah akan dikenakan sanksi sesuai dengan kebijakan yang berlaku.</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            };
+            const dateTimeString = now.toLocaleDateString('id-ID', options);
+            document.getElementById('datetime').textContent = dateTimeString;
+        }
+
+        // Update setiap detik
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+    </script>
+</body>
+</html>

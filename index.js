@@ -2,9 +2,25 @@ import express from 'express';
 import TelegramBot from 'node-telegram-bot-api';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import path from 'path';
 
 const app = express();
 dotenv.config();
+app.use(cors());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+
+app.set("view engine", "ejs");
+const __filename = path.resolve();
+const __dirname = path.dirname(__filename);
+
+app.set("views", path.join(__dirname, "/botlab/views"));
+
+app.get("/", (req, res) => {
+    res.render("main");
+});
 
 const token = process.env.TOKEN;
 const bot = new TelegramBot(token, { polling: true });
@@ -38,6 +54,10 @@ let pendingResponses = new Map();
 const checkWhitelist = (chatId) => {
     return whitelist.includes(chatId);
 };
+
+app.get('/', (req, res) => {
+    res.send('Bot is running!');
+});
 
 // Endpoint untuk menerima permintaan bantuan
 app.get('/request-help', (req, res) => {
