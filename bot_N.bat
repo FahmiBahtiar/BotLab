@@ -2,11 +2,11 @@
 cls
 setlocal enabledelayedexpansion
 
-echo Mengirim permintaan bantuan ke laboran...
+echo Mengirim permintaan bantuan ke laboran dari Lab N...
 echo.
 
-:: Tambahkan header user-token saat mengirim request
-curl -s -X GET -H "user-token: 1105365521" http://localhost:3000/request-help > nul
+:: Tambahkan header user-token dan lab identifier saat mengirim request
+curl -s -X GET -H "user-token: 1105365521" -H "lab-identifier: N" http://localhost:3000/request-help > nul
 if %errorlevel% neq 0 (
     echo Gagal mengirim permintaan bantuan. Pastikan server Node.js sedang berjalan.
     pause
@@ -14,7 +14,7 @@ if %errorlevel% neq 0 (
 )
 
 cls
-echo Permintaan bantuan telah dikirim
+echo Permintaan bantuan dari Lab N telah dikirim
 echo.
 echo [Menunggu respons dari laboran...]
 echo.

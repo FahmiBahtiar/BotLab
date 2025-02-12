@@ -9,6 +9,21 @@ dotenv.config();
 const token = process.env.TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
+// Daftar perintah yang tersedia untuk bot
+const commands = [
+    { command: 'response', description: 'Respon permintaan bantuan' }
+];
+
+// Set perintah ke bot
+bot.setMyCommands(commands)
+    .then(() => {
+        console.log('[LOG] Perintah bot berhasil didaftarkan.');
+    })
+    .catch(err => {
+        console.error('[LOG] Gagal mendaftarkan perintah bot:', err);
+    });
+
+
 // Daftar whitelist chatId yang diizinkan
 const whitelist = ['1105365521']; // Tambahkan chatId yang diizinkan di sini
 
@@ -17,6 +32,7 @@ let laboran = [
 ];
 let latestResponse = null;
 let isHelpNeeded = false; // Flag untuk menandai apakah sedang ada permintaan bantuan
+let pendingResponses = new Map(); 
 
 // Middleware untuk memeriksa whitelist
 const checkWhitelist = (chatId) => {
@@ -25,23 +41,23 @@ const checkWhitelist = (chatId) => {
 
 // Endpoint untuk menerima permintaan bantuan
 app.get('/request-help', (req, res) => {
+    const labIdentifier = req.headers['lab-identifier'] || 'Unknown'; // Ambil lab identifier dari header
     if (laboran.length === 0) {
         return res.send('Belum ada laboran yang terdaftar.');
     }
 
     isHelpNeeded = true; // Set flag bahwa bantuan sedang dibutuhkan
 
-    // Kirim notifikasi ke semua laboran
+    // Kirim notifikasi ke semua laboran dengan informasi lab
     laboran.forEach(lab => {
         if (checkWhitelist(lab.chatId)) {
-            bot.sendMessage(lab.chatId, 'Dosen membutuhkan bantuan di lab komputer!');
+            bot.sendMessage(lab.chatId, `Dosen membutuhkan bantuan di lab ${labIdentifier}!`);
         }
     });
 
-    console.log(`[LOG] Permintaan bantuan dikirim ke laboran.`);
-    res.send('Permintaan bantuan telah dikirim ke semua laboran!');
+    console.log(`[LOG] Permintaan bantuan dikirim ke laboran dari lab ${labIdentifier}.`);
+    res.send(`Permintaan bantuan telah dikirim ke semua laboran dari lab ${labIdentifier}!`);
 });
-
 // Endpoint untuk menerima respons dari laboran
 app.post('/response', express.json(), (req, res) => {
     if (!isHelpNeeded) {
@@ -67,11 +83,11 @@ app.post('/response', express.json(), (req, res) => {
         response: response
     };
 
-    // Kirim notifikasi ke semua laboran lain
+    // Kirim notifikasi ke semua laboran lain dengan informasi lab
     laboran.forEach(lab => {
         if (lab.chatId !== chatId.toString() && checkWhitelist(lab.chatId)) {
             bot.sendMessage(lab.chatId, 
-                `Permintaan bantuan sudah direspon oleh ${laboranName} dengan pesan: ${response}`);
+                `Permintaan bantuan dari lab ${labIdentifier} sudah direspon oleh ${laboranName} dengan pesan: ${response}`);
         }
     });
 
@@ -91,17 +107,16 @@ app.get('/response', (req, res) => {
         res.send(formattedResponse);
         latestResponse = null;
     } else {
-        console.log(`[LOG] Tidak ada respons terakhir yang tersedia.`);
+        console.log(`[LOG] Tidak ada respons terakhir.`);
         res.status(204).send();
     }
 });
 
 // Handler untuk command /response
-bot.onText(/\/response (.+)/, (msg, match) => {
+bot.onText(/\/response/, (msg) => {
     const chatId = msg.chat.id.toString();
-    const response = match[1];
 
-    console.log(`[LOG] Percobaan mengirim respons dari chatId: ${chatId}`);
+    console.log(`[LOG] Command /response digunakan oleh chatId: ${chatId}`);
 
     if (!checkWhitelist(chatId)) {
         console.log(`[LOG] Percobaan akses dari chatId yang tidak diizinkan: ${chatId}`);
@@ -123,28 +138,38 @@ bot.onText(/\/response (.+)/, (msg, match) => {
         return;
     }
 
-    fetch('http://localhost:3000/response', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatId, response })
-    })
-    .then(res => res.text())
-    .then(data => {
-        console.log(`[LOG] Respons berhasil dikirim oleh chatId: ${chatId}, pesan: "${response}"`);
-        bot.sendMessage(chatId, `Respons Anda telah dikirim: "${response}"`);
-    })
-    .catch(err => {
-        console.log(`[LOG] Gagal mengirim respons dari chatId: ${chatId}, error: ${err.message}`);
-        bot.sendMessage(chatId, "Gagal mengirim respons.");
-    });
+    // Meminta pesan respons dari laboran
+    bot.sendMessage(chatId, "Silahkan balas pesan yang mau disampaikan:");
+    pendingResponses.set(chatId, true); // Menandai bahwa chatId ini sedang menunggu respons
 });
 
 bot.on('message', (msg) => {
     const chatId = msg.chat.id.toString();
     const name = msg.from.first_name || 'Unknown';
+    const text = msg.text;
 
-    console.log(`[LOG] Pesan masuk dari chatId: ${chatId}, nama: ${name}`);
+    // Jika bukan command dan ada pending response
+    if (!text.startsWith('/') && pendingResponses.get(chatId)) {
+        pendingResponses.delete(chatId); // Hapus status pending
 
+        fetch('http://localhost:3000/response', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chatId, response: text })
+        })
+        .then(res => res.text())
+        .then(data => {
+            console.log(`[LOG] Respons berhasil dikirim oleh chatId: ${chatId}, pesan: "${text}"`);
+            bot.sendMessage(chatId, `Respons Anda telah dikirim: "${text}"`);
+        })
+        .catch(err => {
+            console.log(`[LOG] Gagal mengirim respons dari chatId: ${chatId}, error: ${err.message}`);
+            bot.sendMessage(chatId, "Gagal mengirim respons.");
+        });
+        return;
+    }
+
+    // Proses registrasi laboran baru
     if (!checkWhitelist(chatId)) {
         console.log(`[LOG] Percobaan akses dari chatId yang tidak diizinkan: ${chatId}`);
         bot.sendMessage(chatId, "Anda tidak diizinkan mengakses bot ini.");
@@ -157,6 +182,5 @@ bot.on('message', (msg) => {
         bot.sendMessage(chatId, `Anda terdaftar sebagai laboran dengan nama ${name}. Siap menerima permintaan bantuan!`);
     }
 });
-
 // module.exports = app;
 export default app;
