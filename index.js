@@ -39,9 +39,10 @@ bot.setMyCommands(commands)
         console.error('[LOG] Gagal mendaftarkan perintah bot:', err);
     });
 
-const whitelist = ['1105365521'];
+const whitelist = ['1105365521','1324267240'];
 let laboran = [
     { chatId: '1105365521', name: 'Fahmi' }
+    { chatId: '1324267240', name: 'Faqih' }
 ];
 
 const checkWhitelist = (chatId) => {
